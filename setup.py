@@ -6,7 +6,8 @@ setup(
     packages=find_packages(),
     install_requires=[
         "exorde_data",
-        "aiohttp"
+        "aiohttp",
+        "requests"
     ],
     extras_require={"dev": ["pytest", "pytest-cov", "pytest-asyncio"]},
 )
