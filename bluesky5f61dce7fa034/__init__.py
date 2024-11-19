@@ -998,7 +998,7 @@ def fetch_keywords_list() -> list:
     # Fetch the list of keywords from the online source, ONLINE_KW_LIST_URL
     try:
         # remote file is a list of comma-separated keywords
-        response = requests.get(ONLINE_KW_LIST_URL, timeout=5)
+        response = requests.get(ONLINE_KW_LIST_URL, timeout=1)
         if response.status_code == 200:
             keywords_list = response.text.split(",")
             # remove any empty strings, and strip leading/trailing whitespace, and \n
