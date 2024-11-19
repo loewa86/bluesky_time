@@ -4,6 +4,7 @@ import random
 import logging
 from datetime import datetime, timedelta
 import hashlib
+import requests
 from typing import AsyncGenerator, Any, Dict
 from exorde_data import (
     Item,
@@ -15,6 +16,7 @@ from exorde_data import (
     Domain,
 )
 
+ONLINE_KW_LIST_URL = "https://raw.githubusercontent.com/exorde-labs/TestnetProtocol/refs/heads/main/targets/keywords.txt"
 logging.basicConfig(level=logging.INFO)
 
 # Constants
@@ -983,6 +985,7 @@ BASE_KEYWORDS = [
 
 async def fetch_posts(session: aiohttp.ClientSession, keyword: str, since: str) -> list:
     url = f"https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts?q={keyword}&since={since}"
+    logging.info(f"Fetching posts from {url}")
     async with session.get(url) as response:
         if response.status == 200:
             data = await response.json()
@@ -990,6 +993,20 @@ async def fetch_posts(session: aiohttp.ClientSession, keyword: str, since: str) 
         else:
             logging.error(f"Failed to fetch posts for keyword {keyword}: {response.status}")
             return []
+        
+def fetch_keywords_list() -> list:
+    # Fetch the list of keywords from the online source, ONLINE_KW_LIST_URL
+    try:
+        # remote file is a list of comma-separated keywords
+        response = requests.get(ONLINE_KW_LIST_URL, timeout=5)
+        if response.status_code == 200:
+            keywords_list = response.text.split(",")
+            # remove any empty strings, and strip leading/trailing whitespace, and \n
+            keywords_list = [kw.strip() for kw in keywords_list if kw.strip()]
+            return keywords_list
+    except Exception as e:
+        logging.exception(f"Failed to fetch keywords list: {e}")
+        return []
 
 def calculate_since(max_oldness_seconds: int) -> str:
     # Calculate the 'since' timestamp in ISO 8601 format
@@ -1066,28 +1083,31 @@ def read_parameters(parameters):
 async def query(parameters: dict) -> AsyncGenerator[Dict[str, Any], None]:
     max_oldness_seconds, maximum_items_to_collect, min_post_length = read_parameters(parameters)
     yielded_items = 0
-
-    try:
-        logging.info(f"[Bluesky parameters] checking url_parameters: %s", parameters)
-        if "url_parameters" in parameters and "keyword" in parameters["url_parameters"]:
-            search_keyword = parameters["url_parameters"]["keyword"]
-        if "keyword" in parameters:
-            logging.info(f"[Bluesky parameters] checking url_parameters... ")
-            search_keyword = parameters["keyword"]
-    except Exception as e:
-        logging.exception(f"[Bluesky parameters] Keyword input read failed: {e}")
     
-    for _ in range(3):    
+    # try fetching from the online source
+    try:
+        logging.info(f"[Bluesky parameters] fetching keywords list from {ONLINE_KW_LIST_URL}")
+        keywords_list = fetch_keywords_list()
+    except Exception as e:
+        logging.exception(f"[Bluesky parameters] Keywords list fetch failed: {e}")
+        keywords_list = None
+
+    
+    for _ in range(4):
         if yielded_items >= maximum_items_to_collect:
             break
-        # 33% of the time, use a special keyword
-        if random.random() < 0.33:
-            search_keyword = random.choice(SPECIAL_KEYWORDS_LIST)
-            logging.info(f"[Bluesky parameters] using special keyword: {search_keyword}")
-        # else 33% of the time, use a base keyword
-        elif random.random() < 0.33:
+        
+        if keywords_list is not None:
+            search_keyword = random.choice(keywords_list)
+            logging.info(f"[Bluesky parameters] using online keyword: {search_keyword}")
+            # if it fails, use a base keyword
+        else:
             search_keyword = random.choice(BASE_KEYWORDS)
             logging.info(f"[Bluesky parameters] using base keyword: {search_keyword}")
+        # 15% of the time, use a special keyword
+        if random.random() < 0.15:
+            search_keyword = random.choice(SPECIAL_KEYWORDS_LIST)
+            logging.info(f"[Bluesky parameters] using special keyword: {search_keyword}")
 
         since = calculate_since(max_oldness_seconds)
         logging.info(f"[Bluesky] Fetching posts for keyword '{search_keyword}' since {since}")
@@ -1131,3 +1151,4 @@ async def query(parameters: dict) -> AsyncGenerator[Dict[str, Any], None]:
                     yield item_
                 except Exception as e:
                     logging.exception(f"[Bluesky] Error processing post: {e}")
+        
