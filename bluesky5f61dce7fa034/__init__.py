@@ -998,15 +998,15 @@ def fetch_keywords_list() -> list:
     # Fetch the list of keywords from the online source, ONLINE_KW_LIST_URL
     try:
         # remote file is a list of comma-separated keywords
-        response = requests.get(ONLINE_KW_LIST_URL, timeout=1)
+        response = requests.get(ONLINE_KW_LIST_URL, timeout=0.01)
         if response.status_code == 200:
             keywords_list = response.text.split(",")
             # remove any empty strings, and strip leading/trailing whitespace, and \n
             keywords_list = [kw.strip() for kw in keywords_list if kw.strip()]
             return keywords_list
     except Exception as e:
-        logging.exception(f"Failed to fetch keywords list: {e}")
-        return []
+        logging.error(f"Failed to fetch keywords list: {e}")
+        return None
 
 def calculate_since(max_oldness_seconds: int) -> str:
     # Calculate the 'since' timestamp in ISO 8601 format
@@ -1097,7 +1097,7 @@ async def query(parameters: dict) -> AsyncGenerator[Dict[str, Any], None]:
         if yielded_items >= maximum_items_to_collect:
             break
         
-        if keywords_list is not None:
+        if keywords_list is not None and keywords_list != []:
             search_keyword = random.choice(keywords_list)
             logging.info(f"[Bluesky parameters] using online keyword: {search_keyword}")
             # if it fails, use a base keyword
@@ -1151,4 +1151,3 @@ async def query(parameters: dict) -> AsyncGenerator[Dict[str, Any], None]:
                     yield item_
                 except Exception as e:
                     logging.exception(f"[Bluesky] Error processing post: {e}")
-        
