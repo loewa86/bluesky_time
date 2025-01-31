@@ -19,8 +19,8 @@ from exorde_data import (
 logging.basicConfig(level=logging.INFO)
 
 DEFAULT_OLDNESS_SECONDS = 3600
-DEFAULT_MAXIMUM_ITEMS = 20
-DEFAULT_MIN_POST_LENGTH = 10
+DEFAULT_MAXIMUM_ITEMS = 40
+DEFAULT_MIN_POST_LENGTH = 5
 DEFAULT_SKIP_PROBABILITY = 0.1
 
 def read_parameters(parameters):
