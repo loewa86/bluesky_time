@@ -21,7 +21,7 @@ logging.basicConfig(level=logging.INFO)
 DEFAULT_OLDNESS_SECONDS = 3600
 DEFAULT_MAXIMUM_ITEMS = 40
 DEFAULT_MIN_POST_LENGTH = 5
-DEFAULT_SKIP_PROBABILITY = 0.1
+DEFAULT_SKIP_PROBABILITY = 0.0
 
 def read_parameters(parameters):
     # Check if parameters is not empty or None
