@@ -19,7 +19,7 @@ from exorde_data import (
 logging.basicConfig(level=logging.INFO)
 
 DEFAULT_OLDNESS_SECONDS = 600
-DEFAULT_MAXIMUM_ITEMS = 50
+DEFAULT_MAXIMUM_ITEMS = 200
 DEFAULT_MIN_POST_LENGTH = 5
 DEFAULT_SKIP_PROBABILITY = 0.0
 
@@ -73,7 +73,7 @@ jetstreams_array_endpoints = [
     "jetstream2.us-west.bsky.network"
 ]
 
-async def connect_to_jetstream(max_posts = 100, skip_probability = 0.0):
+async def connect_to_jetstream(max_posts = 200, skip_probability = 0.0):
     selected_jetstream_endpoint = random.choice(jetstreams_array_endpoints) 
     uri = "wss://{}/subscribe?wantedCollections=app.bsky.feed.post".format(selected_jetstream_endpoint)
     logging.info("[BlueSky] Connecting to Jetstream: {}".format(uri))
