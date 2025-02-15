@@ -73,7 +73,7 @@ jetstreams_array_endpoints = [
     "jetstream2.us-west.bsky.network"
 ]
 
-async def connect_to_jetstream(max_posts = 50, skip_probability = 0.1):
+async def connect_to_jetstream(max_posts = 100, skip_probability = 0.0):
     selected_jetstream_endpoint = random.choice(jetstreams_array_endpoints) 
     uri = "wss://{}/subscribe?wantedCollections=app.bsky.feed.post".format(selected_jetstream_endpoint)
     logging.info("[BlueSky] Connecting to Jetstream: {}".format(uri))
@@ -85,9 +85,6 @@ async def connect_to_jetstream(max_posts = 50, skip_probability = 0.1):
             try:
                 message = await websocket.recv()
                 event = json.loads(message)
-                # randomly skip some events
-                if random.random() < skip_probability:
-                    continue
                 
                 if not 'commit' in event:
                     continue
